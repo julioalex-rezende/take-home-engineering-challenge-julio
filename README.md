@@ -1,37 +1,101 @@
 # Take Home Engineering Challenge
 
-We are a very practical team at Microsoft and this extends to the way that we work with you to find out if this team is a great fit for you. We want you to come away with a great understanding of the work that we actually do day to day and what it is like to work with us.
+## Project Decisions
 
-So instead of coding at a whiteboard with someone watching over your shoulder under high pressure, which is not a thing we often do, we instead discuss code that you have written previously when we meet.
+### Language - Python
+- The candidate is **NOT** familiar with the selected language, but he considered the benefits it could bring to the solution and decided for choosing it. It was a great opportunity to also learn/become familiar with it. Therefore, though the solution works, there may be better ways of doing some of the considered steps.
+- Python was the language of choice, as it is well-known for quick PoC code and its comunity collaboration making it possible to import libraries that could help the solution.
+- Python also offers an easy way to plot data, characteristic that turned out to be pretty useful during validation and visualization of results
+- The candidate is familiar with Database concepts, and had a short experience with Pandas Dataset in the past. He considered this as a good option for the data handling and decided for implementing it in Python.
 
-This can be a project of your own or a substantial pull request on a third party project, but some folks have done largely private or proprietary work, and this engineering challenge is for you.
+### Dataset - Pandas
+- Pandas provides useful functionalities for data handling, and a easy API for importing data.
+- Data querying is also pretty straightforward (disregarding the learning curve with syntax). Therefore the Data Structure selected for this solution does not need to store every information that belongs to the foodtrucks. By storing just the foodTrucks' ids, any query can be made to the database in a post-process stage (after the points have been searched). This reduces memory consumption from the Data structure and the query is performed only to the relevant points.
 
-## Guidelines
+### Data Structure: QuadTree
+- First idea that comes to mind is to calculate distance between a point and all the others, sort the result by distance and return the result. Though this solution works, it does not scale well. Given that each search would require O(n) computations, increasing the number of queries would result into O(n2).
+- QuadTree search require O(log n) computation, which will work better for the scalability scenario.
+	- There is an overhead on building and adding items to the QuadTree. However the benefit on the search is a reason worthy having this overhed.
+	- Additionally, Since it's expected that the dataset wouldn't change as frequently, this overhead would be experienced only once (or when we have a dataset uptdate). The number of requests is expected to be considerably higher than the dataset update.
+	- Searching the QuadTree looking for ranges of intersection alsos avoid unecessary calculations of points outside those boundaries.
+- Working together with Pandas Dataset, the QuadTree stores only the point location and its ID. Extra information can be queried through Pandas 
 
--   This is meant to be an assignment that you spend approximately three hours of dedicated, focused work. Do not feel like you need to overengineer the solution with dozens of hours to impress us. Be biased toward quality over quantity.
+## Requirements
 
--   Think of this like an open source project. Create a repo on Github, use git for source control, and use README.md to document what you built for the newcomer to your project.
+A python installation
+pip install --upgrade pandas
+pip install matplotlib
+pip install PySimpleGUI
 
--   Our team builds, alongside our customers and partners, systems engineered to run in production. Given this, please organize, design, test, deploy, and document your solution as if you were going to put into production. We completely understand this might mean you can't do as much in the time budget. Be biased for production-ready over features.
+a _requirements.txt_ file is included in the repository.
+Packages can be installed by running the following command:
 
--   Think out loud in your submission's documentation. Document tradeoffs, the rationale behind your technical choices, or things you would do or do differently if you were able to spend more time on the project or do it again.
+    - pip install -r requirements.txt
 
--   Our team meets our customers where they are in terms of software engineering platforms, frameworks, tools, and languages. This means you have wide latitude to make choices that express the best solution to the problem given your knowledge and favorite tools. Make sure to document how to get started with your solution in terms of setup.
+To run the program. call the main.py file from terminal using _python3_ command
+	- python3 main.py
 
-## The Problem
+## Use Flow
 
-Our San Francisco team loves to eat. They are also a team that loves variety, so they also like to discover new places to eat.
+There are 3 core steps in this project flow:
+	- DataSet creation/Data Preparation
+	- Construction of the QuadTree and Points Insertion
+	- Querying the QuadTree for points within an specified range.
+The 2 first steps are done only once, when the program starts.
+- **Dataset Creation**
 
-In fact, we have a particular affection for food trucks. One of the great things about Food Trucks in San Francisco is that the city releases a list of them as open data.
+Dataset Creation is the process of loading the CSV file into a pandas dataset. This dataset is available during the whole program and any information about a foodTruck can be retrieved based on its respective locationId.
+Some cleanup is performed to this dataset to avoid unwanted points. More on this can be done in future releases.
 
-Your assignment is to make it possible for us to find a food truck no matter where our work takes us in the city.
+- **Quadtree construction and Points Insertion**
 
-This is a freeform assignment. You can write a web API that returns a set of food trucks (our team is fluent in JSON). You can write a web frontend that visualizes the nearby food trucks. We also spend a lot of time in the shell, so a CLI that gives us a couple of local options would be great. And don't be constrained by these ideas if you have a better one!
+The QuadTree was designed as a squared region having a reference center point and boundaries(width and height) using the loaded dataset.
+As its boundaries are the loaded dataset, we can assert that all points will be within these limits.
+Points are then loaded one-by-one to the QuadTree. When inserting a point in a Quadrant, bound-checking is performed, therefore a point is only inserted in the quadrant in which it belongs
+In case a quadrant reaches full capacity, it is then subdivided into 4 new quadrants. Each quadrant is also a QuadTree.
+At the end, the entire tree is created, and the subdivisions are made only at the points that have required an extra space.
 
-The only requirement for the assignment is that it give us at least 5 food trucks to choose from a particular latitude and longitude.
+- **Querying the QuadTree for points within a range**
 
-Feel free to tackle this problem in a way that demonstrates your expertise of an area -- or takes you out of your comfort zone. For example, if you build Web APIs by day and want to build a frontend to the problem or a completely different language instead, by all means go for it - learning is a core competency in our group. Let us know this context in your solution's documentation.
+By user input (either by writing or generating a random (X,Y) coordinate), a range is created as a Circular region having the point of interest as reference and a default radius of 1000 (this number was an arbitrary decision for this project). 
+Before the query itself, the point of interest is plotted in red just as a visual aid for the user to see where in the chart the point will be located.
+The QuadTree is then queried to fetch all points within the intersection between itself and the circular range.
+	- In case this intersection returns less than 5 points (project requirement), a new range is created with an bigger radius (increment of 1000 'units') until we get 5 (or more) points.
+	- in case the range and tree do not intersect, the point of interest is out-of-bounds, so it does not return any points
+	
+The result from the query is an array of Points. And the final output is this array sorted by ascending distance from the Point of Interest.
+The GUI displays a list of points with their IDs, Names and Distances. This can be expanded to fetch other data (looking into Pandas dataset)
+The GUI also plots the entire area. with the points scattered around the plot (blue dots), the QuadTree subdivisions (black rectangles), the Point of Interest (red dot) and the Range queried (green circle.). It also plots the resulting points within the range as green dots.
 
-San Francisco's food truck open dataset is [located here](https://data.sfgov.org/Economy-and-Community/Mobile-Food-Facility-Permit/rqzj-sfat/data) and there is an endpoint with a [CSV dump of the latest data here](https://data.sfgov.org/api/views/rqzj-sfat/rows.csv). We've included a [copy of this data](./Mobile_Food_Facility_Permit.csv) in this repo as well.
 
-Good luck! Please send a link to your solution on Github back to us at least 12 hours before your interview so we can review it before we speak.
+## Trade-offs/Limitations
+### Data Units/Measurements
+- The dataset provides latitude-longitude coordinates, and also (X,Y) coordinates. This project considers the (X,Y) coordinates only, and a translation must be done so (lat,lon) can be used. This is one of the enhancements proposed.
+- Distances between points were also considered as (X,Y) coordinates. The values displayed are the Euclidian distance between 2 points. Conversion to Miles/Km is a nice improvement for future releases
+- These information, however, do not block the algorithm evaluation and it's a matter of applying the right conversion formulas to present the intended values.
+
+### Data Cleanup
+- only a simple cleanup was made to the dataset. which is to remove points that do not have their respective (X,Y) direction.
+- More can be made, such as outliers and duplicates removal, if that is expected from the dataset.
+- As each entry has it's locationId attribute, they were all considered as different points regardless of the extra information held.
+
+### GUI
+- A quite simple GUI was elaborated just for the purpose of presenting the results.
+- no error handling was made on to prevent user to add wrong information to input fields
+- The button "Get Location" was added to allow random locations within the boundary to be selected, as a way of quick testing the tool and visualize results. To test an out-of-boundary value, user must change the fields to something greater than the boundary (such as gererating a random location and adding one digit to one of the coordinate points)
+- The result TextArea just lists the retrieved points ascending by distance, as an example that any data can be retrieved having the point locationId. To provide a more comprehensive information, this can be reviewed and/or extra methods can be added to this API
+
+## Testing
+- Validation for this project was made through visualization of the Area/Points being plotted.
+- The chart presented by the GUI gives a good view of the algorithm being applied
+- When running, we can experience some delay while plotting the result data. This was not expected since the dataset is not considerably big. Investigation is needed to check whether is a regular drawning bottleneck or if the algorithm has a missing bit.
+- Unfortunately, no unit test was made for this project so far. This is also a enhancement proposal.
+
+## Proposed Improvements
+- Generate unit tests to validate data structure (quadTree)
+- convert units to use real Coordinates based on (lat,lon)
+- Improve GUI, adding error handlings as well as mouse interaction to select a point
+- make use of APIs such as Google Maps to enhance user experience
+- convert "Get Location" button flow into a actual location retrieving algorithm
+- Increment result adding more relevant information for each foodtruck (Depending on requirements)
+- Remove some hard coded code (quadTree capacity, range radius), providing parametrization and/or allowing user to decide 

@@ -1,0 +1,4 @@
+matplotlib==3.5.2
+packaging==21.3
+pandas==1.4.2
+PySimpleGUI==4.60.1

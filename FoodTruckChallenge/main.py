@@ -4,7 +4,6 @@ import DataHandling as dataHandling
 import QuadTree as qtree
 
 import PySimpleGUI as sg
-import numpy as np
 import random as rd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib
@@ -134,7 +133,7 @@ def main():
     window = buildGUI()
 
     # graph plot configuration
-    fig = plt.figure(figsize=(5,4), dpi=100)
+    fig = plt.figure(figsize=(10,8), dpi=100)
     ax = fig.add_subplot(111)
     foodTruckGraph = createCanvas(window["CANVAS"].TKCanvas, fig)
 

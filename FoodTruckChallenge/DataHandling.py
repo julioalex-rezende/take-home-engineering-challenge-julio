@@ -2,8 +2,6 @@ from QuadTree import *
 # from FoodTruckChallenge.QuadTree import Point, Boundary, QuadTree
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import utm
 
 # TODO: implement convertion between (lat,lon) to (X,Y) coordinates
 def coordToXY(lat, lon):
