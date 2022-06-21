@@ -8,6 +8,9 @@ class Point:
         self.y = y
         self.locationId = userData
 
+    def distanceFromOther(self, point):
+        return math.dist([self.x, self.y], [point.x, point.y])
+
 
 class Boundary:
     def __init__(self, center, width, height):
@@ -21,8 +24,7 @@ class Boundary:
             point.x <= self.center.x + self.width and
             point.y >= self.center.y - self.height and
             point.y <= self.center.y + self.height
-        )
-        
+        )        
 
     def intersects(self, range):
         return not (
@@ -37,16 +39,8 @@ class Range:
         self.center = center
         self.radius = r
 
-    def distanceFromPoint(self, point):
-        return math.dist([self.center.x, self.center.y], [point.x, point.y])
-
     def containsPoint(self, point):
-        return ( self.distanceFromPoint(point) < self.radius )
-        #     point.x >= self.center.x - self.radius and
-        #     point.x <= self.center.x + self.radius and
-        #     point.y >= self.center.y - self.radius and
-        #     point.y <= self.center.y + self.radius
-        # )
+        return ( self.center.distanceFromOther(point) < self.radius )
 
     def draw(self, referencePlot):
         referencePlot.add_patch(Circle((self.center.x, self.center.y), self.radius, edgecolor="green", facecolor="none"))
