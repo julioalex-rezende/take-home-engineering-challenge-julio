@@ -33,6 +33,7 @@ Packages can be installed by running the following command:
     - pip install -r requirements.txt
 
 To run the program. call the main.py file from terminal using _python3_ command
+The file is included inside FoodTruckChallenge folder
 	- python3 main.py
 
 ## Use Flow
