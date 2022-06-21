@@ -22,7 +22,7 @@
 
 ## Requirements
 
-A python installation
+A python 3.7 or later installation
 pip install --upgrade pandas
 pip install matplotlib
 pip install PySimpleGUI
