@@ -1,4 +1,3 @@
-from turtle import color
 from QuadTree import *
 # from FoodTruckChallenge.QuadTree import Point, Boundary, QuadTree
 
@@ -6,10 +5,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import utm
 
-# def coordToXY(lat, lon):
-#     #//Calculates x based on cos of average of the latitudes
-#     x, y, zone, ut = utm.from_latlon(lat, lon)
-#     return x, y
+# TODO: implement convertion between (lat,lon) to (X,Y) coordinates
+def coordToXY(lat, lon):
+    pass
 
 def buildDataStructure(dataset):
     # create Quadtree with boundaries defined by the input dataset
@@ -37,15 +35,6 @@ def defineAreaBoundary(dataset):
 
     height = (maxY - yc)
     width = (maxX - xc)
-
-    # print("x1: ", minX)
-    # print("x2: ", maxX)
-    # print("y1: ", minY)
-    # print("y2: ", maxY)
-
-    # print("---")
-    # print("xc: ", xc)
-    # print("yc: ", yc)
     return Boundary(center, width, height)
 
 def buildDataSet():
@@ -53,48 +42,8 @@ def buildDataSet():
     dataset = pd.read_csv('Mobile_Food_Facility_Permit.csv')
     
     # data treatment: for PoC just remove unwanted X,Y coordinates
-    # TODO: improve this in the future
+    # TODO: improve this in the future (remove duplicates, etc)
     cleanDataset = dataset.dropna(subset = ["X", "Y"])
 
     return cleanDataset
 
-def testing():
-    dataset = pd.read_csv('Mobile_Food_Facility_Permit.csv')
-    cleanDataset = dataset.dropna(subset = ["X", "Y"])
-
-    qtree = buildDataStructure(cleanDataset)
-    print("---")
-    print(qtree.boundary.center.x, qtree.boundary.center.y , qtree.boundary.width, qtree.boundary.height)
-
-    dataset.plot.scatter(x="X", y="Y", title="Data Distribution and Center Point")
-    plt.scatter(x=qtree.boundary.center.x, y=qtree.boundary.center.y, color="red")
-    #ax.scatter(x=qtree.boundary.center.x, y=qtree.boundary.center.y, color="red")
-
-    pointOfInterest = Point(6003910.72, 2100240.027)
-
-    pointsNearby = []
-    radius = 100
-
-    while (len(pointsNearby) < 5):
-        print("trying with range = ", radius)
-        range = Range(pointOfInterest, radius)
-        pointsNearby = qtree.queryRange(range)
-        radius = radius*2
-        if not qtree.boundary.intersects(range):
-            break
-
-    if len(pointsNearby) < 5:
-        print("area was out of range")
-
-    print(len(pointsNearby))
-    fig, ax = plt.subplots()
-    qtree.draw(ax)
-    range.draw(ax)
-
-
-    for p in pointsNearby:
-        ax.scatter(x = p.x, y = p.y, color="green", alpha=1)
-        
-    ax.scatter(x = pointOfInterest.x, y = pointOfInterest.y, color="red", alpha=1)
-
-    plt.show()

@@ -1,23 +1,29 @@
 import math
-import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Circle
 
+# Point: 
+# . stores only X,Y coordinates and its locationID
+# . For extra information, dataset can be queried based on ID 
 class Point:
     def __init__(self, x, y, userData = None):
         self.x = x
         self.y = y
         self.locationId = userData
 
+    # calculates the Euclidian distance from 2 points
     def distanceFromOther(self, point):
         return math.dist([self.x, self.y], [point.x, point.y])
 
-
+# Boundary:
+# . defines the Rectangle area in which points will be located.
+# . a reference center point, and width/height information
 class Boundary:
     def __init__(self, center, width, height):
         self.center = center
         self.width = width
         self.height = height
 
+    # check if a point is within the boundary
     def containsPoint(self, point):
         return (
             point.x >= self.center.x - self.width and
@@ -26,6 +32,7 @@ class Boundary:
             point.y <= self.center.y + self.height
         )        
 
+    # checks whether a specific range somehow intersects the boundary
     def intersects(self, range):
         return not (
             self.center.x + self.width < range.center.x - range.radius or
@@ -34,19 +41,28 @@ class Boundary:
             self.center.y - self.height > range.center.y + range.radius
         )
 
+# Range:
+# . An Circular area centered in a reference point
 class Range:
     def __init__(self, center, r = 1):
         self.center = center
         self.radius = r
 
+    # check if a point is within the range boundary 
     def containsPoint(self, point):
         return ( self.center.distanceFromOther(point) < self.radius )
 
+    # plot the range in a reference plot
     def draw(self, referencePlot):
         referencePlot.add_patch(Circle((self.center.x, self.center.y), self.radius, edgecolor="green", facecolor="none"))
         
 
 
+# QuadTree:
+# . A tree data structure which can be divided into 4 new leaves
+# . Each leave/branch will have its own capacity
+# . if capacity is full, a new division is made
+# . when adding a point, the quadrant is checked if the point belongs to it
 class QuadTree:    
     def __init__(self, boundary, capacity = 1):
         self.points = []
@@ -58,6 +74,7 @@ class QuadTree:
         self.southEast = None
         self.divided = False
 
+    # add a point to the tree
     def insert(self, point):
         #Ignore points that do not belong in this quadrant
         if not self.boundary.containsPoint(point):
@@ -72,6 +89,7 @@ class QuadTree:
         if not self.divided:
             self.subdivide()
 
+        # recursive incursion to respective quadrants
         if self.northWest.insert(point):
             return True
         if self.northEast.insert(point):
@@ -82,11 +100,9 @@ class QuadTree:
             return True
     
         # point was not added. (shall never happen)
-        # print("error inserting")
-        # print("error inserting - point: ", point.x, point.y)
         return False
     
-
+    # divide a leave, creating 4 new ones based on their geometrical location
     def subdivide(self):
         xc = self.boundary.center.x
         yc = self.boundary.center.y
@@ -103,17 +119,18 @@ class QuadTree:
         self.southEast = QuadTree(se, self.capacity)
         self.divided = True
 
+    # Search for points within a Range in the QuadTree
     def queryRange(self, range):
         foundPoints = []
         if not self.boundary.intersects(range):
-            return foundPoints # empty array
+            return foundPoints # empty array in case of no interception
 
         # get points in this quadrant
         for p in self.points:
             if range.containsPoint(p):
                 foundPoints.append(p)
 
-        # get points in inner quadrants
+        # recursively get points in inner quadrants
         if self.divided:
             foundPoints = foundPoints + self.northWest.queryRange(range)
             foundPoints = foundPoints + self.northEast.queryRange(range)
@@ -122,20 +139,19 @@ class QuadTree:
 
         return foundPoints
 
+    # plot the QuadTree and its points
     def draw(self, referencePlot):
         x = self.boundary.center.x - self.boundary.width
         y = self.boundary.center.y - self.boundary.height
 
         # quadrant boundary
         referencePlot.add_patch(Rectangle((x, y), self.boundary.width*2, self.boundary.height*2, edgecolor="black", facecolor="none"))
-        
-        # center point - REMOVE
-        #referencePlot.scatter(x=self.boundary.center.x, y=self.boundary.center.y, color="black")
 
         # all points in this quadrant
         for p in self.points:
             referencePlot.scatter(x = p.x, y = p.y, color="blue", alpha=1)
 
+        # recursively plots inner quadrants
         if self.divided:
             self.northWest.draw(referencePlot)
             self.northEast.draw(referencePlot)
